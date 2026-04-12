@@ -1,0 +1,64 @@
+name: airport-scheduling-env
+version: "0.1.0"
+description: >
+  Airport Flight Scheduling Environment — an OpenEnv environment where an AI agent
+  manages runway assignments, gate allocations, and flight sequencing for a busy
+  international airport. Agents must minimize delays, maximize throughput, and
+  handle weather disruptions across 3 tasks of increasing difficulty.
+author: airport-env-team
+tags:
+  - scheduling
+  - logistics
+  - real-world
+  - multi-constraint
+  - openenv
+
+tasks:
+  - id: single_runway_landing
+    name: Single Runway Landing Sequence
+    difficulty: easy
+    description: >
+      Sequence 5 arriving flights onto a single runway. Minimize total delay
+      while respecting wake turbulence separation rules (heavy before light
+      requires 3-min gap; same category requires 2-min gap).
+
+  - id: multi_runway_gate_assignment
+    name: Multi-Runway Gate Assignment
+    difficulty: medium
+    description: >
+      Manage 2 runways and 8 gates for 10 simultaneous arrivals and departures.
+      Assign each flight to the correct runway and gate type (domestic/international),
+      avoid conflicts, and minimize total passenger walk time.
+
+  - id: storm_disruption_recovery
+    name: Storm Disruption Recovery
+    difficulty: hard
+    description: >
+      A severe storm closes runway 2 mid-episode and causes 40% of flights to
+      divert or hold. Reassign all affected flights, manage fuel emergency
+      priority overrides, and restore schedule adherence within 60 simulated
+      minutes. Score is based on safety, delay minutes, and diversion count.
+
+observation_space:
+  flights: "List of arriving/departing flights with ETA, type, weight class, fuel state"
+  runways: "Availability status and current occupant per runway"
+  gates: "Occupancy, terminal, domestic/international flag per gate"
+  weather: "Visibility, wind speed/direction, active NOTAMs"
+  clock: "Simulated time in minutes from episode start"
+
+action_space:
+  assign_runway: "Assign a flight_id to a runway_id with optional delay offset"
+  assign_gate: "Assign a flight_id to a gate_id"
+  delay_flight: "Push a flight's scheduled time by N minutes"
+  divert_flight: "Send a flight to alternate airport (removes from board)"
+  clear_runway: "Mark runway as clear after departure/landing"
+  declare_emergency: "Grant priority clearance to a fuel-critical flight"
+
+reward:
+  per_step: "−0.1 × total delay minutes accumulated this step"
+  on_safe_landing: "+1.0 per successful landing without conflict"
+  on_gate_assigned: "+0.5 per gate assigned within 5 min of landing"
+  on_conflict: "−5.0 per runway incursion or gate double-booking"
+  on_emergency_resolved: "+3.0 per fuel emergency resolved before critical"
+  on_unnecessary_diversion: "−2.0 per diversion that could have been avoided"
+  episode_bonus: "Up to +10.0 based on on-time performance ratio"
